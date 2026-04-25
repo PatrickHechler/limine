@@ -560,6 +560,62 @@ static inline bool should_skip_entry(struct menu_entry *entry) {
             return true;
         }
     }
+    char *cur_entry_show_if_boot = config_get_value(entry->body, 0, "SHOW_IF_BOOT");
+    if (cur_entry_show_if_boot) {
+        bool skip = false;
+#if defined (UEFI)
+        if (strcmp(cur_entry_protocol, "efi") != 0) {
+#elif defined (BIOS)
+        if (strcmp(cur_entry_protocol, "bios") != 0) {
+#endif
+            return true;
+        }
+    }
+    char *cur_entry_show_if_arch = config_get_value(entry->body, 0, "SHOW_IF_ARCH");
+    if (cur_entry_show_if_arch) {
+        bool skip = false;
+#if defined (__x86_64__)
+        const char *arch = "x86-64";
+#elif defined (__i386__)
+        const char *arch;
+        {
+        uint32_t eax, ebx, ecx, edx;
+        if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
+        	arch = "ia-32";
+        } else {
+        	arch = "x86-64";
+        }
+        }
+#elif defined (__aarch64__)
+        const char *arch = "aarch64";
+#elif defined (__riscv)
+        const char *arch = "riscv64";
+#elif defined (__loongarch64)
+        const char *arch = "loongarch64";
+#else
+#error "Unspecified architecture"
+#endif
+        char *cur = cur_entry_show_if_arch;
+        while (*cur) {
+            if (isspace(*cur)) {
+                ++cur;
+                continue;
+            }
+            char *next = cur;
+            while (*next && !isspace(*next)) {
+                ++next;
+            }
+            if (memcmp(cur, arch, next - cur) == 0
+             && arch[next - cur] == '\0') {
+                skip = false;
+                break;
+            }
+            cur = next;
+        }
+        if (skip) {
+            return true;
+        }
+    }
     return false;
 }
 
