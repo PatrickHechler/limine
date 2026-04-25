@@ -125,6 +125,8 @@ static const char *VALID_KEYS[] = {
     "IMAGE_PATH",
 	"DTB_PATH",
     "ENTRY",
+    "SHOW_IF_BOOT",
+    "SHOW_IF_ARCH",
     NULL
 };
 
@@ -562,7 +564,6 @@ static inline bool should_skip_entry(struct menu_entry *entry) {
     }
     char *cur_entry_show_if_boot = config_get_value(entry->body, 0, "SHOW_IF_BOOT");
     if (cur_entry_show_if_boot) {
-        bool skip = false;
 #if defined (UEFI)
         if (strcmp(cur_entry_protocol, "efi") != 0) {
 #elif defined (BIOS)
